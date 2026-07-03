@@ -15,6 +15,7 @@ A library implementing different string similarity and distance measures. A doze
 * [Normalized Levenshtein](#normalized-levenshtein)
 * [Weighted Levenshtein](#weighted-levenshtein)
 * [Damerau-Levenshtein](#damerau-levenshtein)
+* [Optimal String Alignment](#optimal-string-alignment)
 * [Jaro-Winkler](#jaro-winkler)
 * [Longest Common Subsequence](#longest-common-subsequence)
 * [Metric Longest Common Subsequence](#metric-longest-common-subsequence)
@@ -45,7 +46,7 @@ The main characteristics of each implemented algorithm are presented below. The 
 | [Normalized Levenshtein](#normalized-levenshtein)	|distance<br>similarity	| Yes 			| No 		| 	      | O(m*n) <sup>1</sup> |
 | [Weighted Levenshtein](#weighted-levenshtein)		|distance 				| No 			| No 		| 	      | O(m*n) <sup>1</sup> |
 | [Damerau-Levenshtein](#damerau-levenshtein) <sup>3</sup> 	|distance 				| No 			| Yes 		| 	      | O(m*n) <sup>1</sup> |
-| Optimal String Alignment <sup>3</sup> |not implemented yet | No 			| No 		| 	      | O(m*n) <sup>1</sup> |
+| [Optimal String Alignment](#optimal-string-alignment) <sup>3</sup> |distance | No 			| No 		| 	      | O(m*n) <sup>1</sup> |
 | [Jaro-Winkler](#jaro-winkler) 		|similarity<br>distance	| Yes  			| No 		| 	      | O(m*n) |
 | [Longest Common Subsequence](#longest-common-subsequence) 		|distance 				| No 			| No 		| 	      | O(m*n) <sup>1,2</sup> |
 | [Metric Longest Common Subsequence](#metric-longest-common-subsequence) |distance   			| Yes 			| Yes  		| 	      | O(m*n) <sup>1,2</sup> |
@@ -81,8 +82,7 @@ The MetricStringDistance interface : A few of the distances are actually metric 
 
 A lot of nearest-neighbor search algorithms and indexing structures rely on the triangle inequality. You can check "Similarity Search, The Metric Space Approach" by Zezula et al. for a survey. These cannot be used with non metric similarity measures.
 
-<!--[Read Javadoc for a detailed description](http://api123.web-d.be/api/java-string-similarity/head/index.html)-->
-<!-- TODO.JB - API documentation link? -->
+The NuGet package includes XML documentation for the public API. The source files also contain method summaries for each algorithm, including string overloads and span overloads where available.
 
 ## Shingles (n-gram) based similarity and distance
 A few algorithms work by converting strings into sets of n-grams (sequences of n characters, also sometimes called k-shingles). The similarity or distance between the strings is then the similarity or distance between the sets.
@@ -216,6 +216,34 @@ Will produce:
 1.0
 1.0
 6.0
+```
+
+## Optimal String Alignment
+Optimal String Alignment is the restricted edit distance variant of Damerau-Levenshtein. It supports insertion, deletion, substitution, and adjacent transposition, but no substring can be edited more than once.
+
+This implementation returns a distance and does not satisfy the triangle inequality in all cases.
+
+```cs
+using System;
+using F23.StringSimilarity;
+
+public class Program
+{
+    public static void Main(string[] args)
+    {
+        var osa = new OptimalStringAlignment();
+
+        Console.WriteLine(osa.Distance("CA", "ABC"));
+        Console.WriteLine(osa.Distance("BAC", "CAB"));
+    }
+}
+```
+
+Will produce:
+
+```
+3.0
+2.0
 ```
 
 

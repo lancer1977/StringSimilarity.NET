@@ -90,8 +90,20 @@ namespace F23.StringSimilarity.Tests
         {
             var instance = new RatcliffObershelp();
             NullEmptyTests.TestDistance(instance);
+        }
 
-            // TODO: regular (non-null/empty) distance tests
+        [InlineData("My string", "My tsring", 0.111111)]
+        [InlineData("My string", "My ntrisg", 0.222222)]
+        [InlineData("MATEMATICA", "MATHEMATICS", 0.142857)]
+        [InlineData("aleksander", "alexandre", 0.263158)]
+        [InlineData("pennsylvania", "pencilvaneya", 0.333333)]
+        [InlineData("WIKIMEDIA", "WIKIMANIA", 0.222222)]
+        [Theory]
+        public void TestDistanceForNonEmptyStrings(string s1, string s2, double expected)
+        {
+            var instance = new RatcliffObershelp();
+
+            Assert.Equal(expected, instance.Distance(s1, s2), 6);
         }
     }
 }

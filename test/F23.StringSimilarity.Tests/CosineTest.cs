@@ -144,6 +144,18 @@ namespace F23.StringSimilarity.Tests
             Assert.Equal(0.516185, cosine.Similarity(profile1, profile2), 6);
         }
 
+        [Fact]
+        public void ProfileSimilarityWithEmptyProfileReturnsZero()
+        {
+            var cosine = new Cosine(3);
+            var emptyProfile = cosine.GetProfile("");
+            var nonEmptyProfile = cosine.GetProfile("ABCD");
+
+            Assert.Equal(0.0, cosine.Similarity(emptyProfile, emptyProfile));
+            Assert.Equal(0.0, cosine.Similarity(emptyProfile, nonEmptyProfile));
+            Assert.Equal(0.0, cosine.Similarity(nonEmptyProfile, emptyProfile));
+        }
+
         private static async Task<string> ReadResourceFileAsync(string file)
         {
             var assembly = Assembly.GetExecutingAssembly();

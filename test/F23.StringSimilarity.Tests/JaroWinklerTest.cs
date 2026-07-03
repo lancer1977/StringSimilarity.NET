@@ -70,8 +70,23 @@ namespace F23.StringSimilarity.Tests
         {
             var instance = new JaroWinkler();
             NullEmptyTests.TestDistance(instance);
+        }
 
-            // TODO: regular (non-null/empty) distance tests
+        [InlineData("My string", "My tsring", 0.025926)]
+        [InlineData("My string", "My ntrisg", 0.103704)]
+        [Theory]
+        public void TestDistance(string s1, string s2, double expected)
+        {
+            var instance = new JaroWinkler();
+
+            Assert.Equal(expected, actual: instance.Distance(s1, s2), precision: 6);
+            Assert.Equal(expected, actual: instance.Distance(s1.AsSpan(), s2.AsSpan()), precision: 6);
+            Assert.Equal(
+                expected,
+                actual: instance.Distance<byte>(
+                    System.Text.Encoding.Latin1.GetBytes(s1).AsSpan(),
+                    System.Text.Encoding.Latin1.GetBytes(s2).AsSpan()),
+                precision: 6);
         }
         
         [Fact]

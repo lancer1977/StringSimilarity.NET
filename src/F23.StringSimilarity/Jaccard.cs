@@ -80,6 +80,11 @@ namespace F23.StringSimilarity
                 return 1;
             }
 
+            if (s1.Length < k || s2.Length < k)
+            {
+                return 0;
+            }
+
             var profile1 = GetProfile(s1);
             var profile2 = GetProfile(s2);
 

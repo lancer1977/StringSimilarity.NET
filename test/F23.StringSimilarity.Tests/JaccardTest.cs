@@ -59,5 +59,16 @@ namespace F23.StringSimilarity.Tests
 
             NullEmptyTests.TestDistance(instance);
         }
+
+        [Fact]
+        public void TestSmallString()
+        {
+            var instance = new Jaccard(k: 3);
+
+            Assert.Equal(expected: 0.0, actual: instance.Similarity("AB", "AC"));
+            Assert.Equal(expected: 1.0, actual: instance.Distance("AB", "AC"));
+            Assert.Equal(expected: 1.0, actual: instance.Similarity("AB", "AB"));
+            Assert.Equal(expected: 0.0, actual: instance.Distance("AB", "AB"));
+        }
     }
 }

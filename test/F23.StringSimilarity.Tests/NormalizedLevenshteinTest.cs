@@ -22,20 +22,59 @@
  * THE SOFTWARE.
  */
 
+using System;
+using System.Diagnostics.CodeAnalysis;
 using F23.StringSimilarity.Tests.TestUtil;
 using Xunit;
 
 namespace F23.StringSimilarity.Tests
 {
+    [SuppressMessage("ReSharper", "ArgumentsStyleLiteral")]
+    [SuppressMessage("ReSharper", "ArgumentsStyleNamedExpression")]
+    [SuppressMessage("ReSharper", "ArgumentsStyleOther")]
     public class NormalizedLevenshteinTest
     {
+        [InlineData("My string", "My tring", 0.111111)]
+        [InlineData("My string", "M string2", 0.222222)]
+        [InlineData("kitten", "sitting", 0.428571)]
+        [Theory]
+        public void TestDistance(string s1, string s2, double expected)
+        {
+            var instance = new NormalizedLevenshtein();
+
+            Assert.Equal(expected, actual: instance.Distance(s1, s2), precision: 6);
+            Assert.Equal(expected, actual: instance.Distance(s1.AsSpan(), s2.AsSpan()), precision: 6);
+            Assert.Equal(
+                expected,
+                actual: instance.Distance<byte>(
+                    System.Text.Encoding.Latin1.GetBytes(s1).AsSpan(),
+                    System.Text.Encoding.Latin1.GetBytes(s2).AsSpan()),
+                precision: 6);
+        }
+
+        [InlineData("My string", "My tring", 0.888889)]
+        [InlineData("My string", "M string2", 0.777778)]
+        [InlineData("kitten", "sitting", 0.571429)]
+        [Theory]
+        public void TestSimilarity(string s1, string s2, double expected)
+        {
+            var instance = new NormalizedLevenshtein();
+
+            Assert.Equal(expected, actual: instance.Similarity(s1, s2), precision: 6);
+            Assert.Equal(expected, actual: instance.Similarity(s1.AsSpan(), s2.AsSpan()), precision: 6);
+            Assert.Equal(
+                expected,
+                actual: instance.Similarity<byte>(
+                    System.Text.Encoding.Latin1.GetBytes(s1).AsSpan(),
+                    System.Text.Encoding.Latin1.GetBytes(s2).AsSpan()),
+                precision: 6);
+        }
+
         [Fact]
         public void NullEmptyDistanceTest()
         {
             var instance = new NormalizedLevenshtein();
             NullEmptyTests.TestDistance(instance);
-
-            // TODO: regular (non-null/empty) distance tests
         }
 
         [Fact]
@@ -43,8 +82,6 @@ namespace F23.StringSimilarity.Tests
         {
             var instance = new NormalizedLevenshtein();
             NullEmptyTests.TestSimilarity(instance);
-
-            // TODO: regular (non-null/empty) similarity tests
         }
     }
 }

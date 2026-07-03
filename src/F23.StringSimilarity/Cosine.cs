@@ -143,7 +143,16 @@ namespace F23.StringSimilarity
         /// <param name="profile2"></param>
         /// <returns></returns>
         public double Similarity(IDictionary<string, int> profile1, IDictionary<string, int> profile2)
-            => DotProduct(profile1, profile2)
-            / (Norm(profile1) * Norm(profile2));
+        {
+            var norm1 = Norm(profile1);
+            var norm2 = Norm(profile2);
+
+            if (norm1 == 0 || norm2 == 0)
+            {
+                return 0;
+            }
+
+            return DotProduct(profile1, profile2) / (norm1 * norm2);
+        }
     }
 }
