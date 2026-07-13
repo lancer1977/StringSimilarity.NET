@@ -1,0 +1,31 @@
+schema: 1
+project:
+  name: StringSimilarity.NET
+  kind: dotnet-library
+  owner: lancer1977
+
+languages:
+  - csharp
+
+frameworks:
+  - dotnet
+
+validation:
+  restore: dotnet restore
+  build: dotnet build
+  test: dotnet test
+
+tracking:
+  primary: repo-local
+  dev-studio: DEV_STUDIO.md
+
+docs:
+  index: docs/README.md
+  roadmap: docs/roadmaps/README.md
+  features: docs/features/README.md
+
+devstudio:
+  runtime_model: three-agent
+  backlog_ordering: filename
+  skip_promoted_planning: true
+  one_stage_per_run: true
