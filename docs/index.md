@@ -9,6 +9,12 @@
 - `build/CreateNugetPackage.ps1` contains legacy package creation helpers.
 - `scripts/validate.sh` is the local validation entry point.
 
+## Consumer contracts
+
+- [Algorithm contracts](algorithm-contracts.md) documents selection guidance,
+  metric/normalization guarantees, UTF-16 Unicode semantics, null/empty
+  behavior, large-input limits, and the current target-framework matrix.
+
 ## Validation
 
 ```bash
@@ -16,3 +22,5 @@
 ```
 
 The validator runs the solution tests in `Release` configuration unless overridden.
+GitHub Actions runs the same command for pushes and pull requests targeting
+`main`.
