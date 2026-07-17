@@ -7,6 +7,9 @@ A .NET port of java-string-similarity:
 
 A library implementing different string similarity and distance measures. A dozen of algorithms (including Levenshtein edit distance and sibblings, Jaro-Winkler, Longest Common Subsequence, cosine similarity etc.) are currently implemented. Check the summary table below for the complete list...
 
+For consumer-facing selection, Unicode, null/empty, large-input, and target
+framework guarantees, see [Algorithm contracts](docs/algorithm-contracts.md).
+
 * [Download](#download)
 * [Overview](#overview)
 * [Normalized, metric, similarity and distance](#normalized-metric-similarity-and-distance)
