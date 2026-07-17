@@ -22,3 +22,5 @@
 ```
 
 The validator runs the solution tests in `Release` configuration unless overridden.
+GitHub Actions runs the same command for pushes and pull requests targeting
+`main`.
