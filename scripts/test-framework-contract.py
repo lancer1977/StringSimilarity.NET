@@ -4,8 +4,9 @@
 from __future__ import annotations
 
 from pathlib import Path
+import subprocess
 import sys
-import xml.etree.ElementTree as ET
+import tempfile
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -13,57 +14,117 @@ LIBRARY_PROJECT = ROOT / "src/F23.StringSimilarity/F23.StringSimilarity.csproj"
 TEST_PROJECT = ROOT / "test/F23.StringSimilarity.Tests/F23.StringSimilarity.Tests.csproj"
 
 
-def target_framework(project_xml: str) -> str:
-    root = ET.fromstring(project_xml)
-    values = [
-        element.text.strip()
-        for element in root.iter("TargetFramework")
-        if element.text and element.text.strip()
-    ]
-    if len(values) != 1:
+def evaluated_target(path: Path) -> str:
+    with tempfile.TemporaryDirectory(prefix="string-similarity-framework-") as temp:
+        targets = Path(temp) / "report-framework.targets"
+        targets.write_text(
+            """<Project>
+  <Target Name="ReportFrameworkContract">
+    <Message Text="FRAMEWORK_CONTRACT=$(TargetFramework)" Importance="high" />
+  </Target>
+</Project>
+""",
+            encoding="utf-8",
+        )
+        result = subprocess.run(
+            [
+                "dotnet",
+                "msbuild",
+                str(path),
+                "-nologo",
+                "-target:ReportFrameworkContract",
+                f"-property:CustomAfterMicrosoftCommonTargets={targets}",
+                "-property:Configuration=Release",
+                "-verbosity:minimal",
+            ],
+            cwd=path.parent,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+    if result.returncode != 0:
         raise AssertionError(
-            f"project must declare exactly one TargetFramework, found {len(values)}"
+            f"MSBuild evaluation failed for {path}: {result.stderr.strip()}"
+        )
+    values = [
+        line.split("FRAMEWORK_CONTRACT=", 1)[1].strip()
+        for line in result.stdout.splitlines()
+        if "FRAMEWORK_CONTRACT=" in line
+    ]
+    if len(values) != 1 or not values[0]:
+        raise AssertionError(
+            f"MSBuild did not report exactly one TargetFramework for {path}"
         )
     return values[0]
 
 
-def require_target_xml(project_xml: str, expected: str, label: str) -> None:
-    actual = target_framework(project_xml)
+def require_target(path: Path, expected: str, label: str | None = None) -> None:
+    actual = evaluated_target(path)
     if actual != expected:
-        raise AssertionError(f"{label} targets {actual}; expected {expected}")
+        name = label or str(path.relative_to(ROOT))
+        raise AssertionError(f"{name} targets {actual}; expected {expected}")
 
 
-def require_target(path: Path, expected: str) -> None:
-    require_target_xml(
-        path.read_text(encoding="utf-8-sig"),
-        expected,
-        str(path.relative_to(ROOT)),
-    )
+def require_evaluation_regressions() -> None:
+    with tempfile.TemporaryDirectory(prefix="string-similarity-fixtures-") as temp:
+        fixture_root = Path(temp)
+        indirect = fixture_root / "indirect.csproj"
+        indirect.write_text(
+            """<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <ContractTarget>netstandard2.0</ContractTarget>
+    <TargetFramework>$(ContractTarget)</TargetFramework>
+  </PropertyGroup>
+</Project>
+""",
+            encoding="utf-8",
+        )
+        require_target(indirect, "netstandard2.0", "property-indirected fixture")
 
+        conditional = fixture_root / "conditional.csproj"
+        conditional.write_text(
+            """<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+</Project>
+""",
+            encoding="utf-8",
+        )
+        require_target(conditional, "net6.0", "conditional fixture")
 
-def require_negative_fixtures() -> None:
-    fixtures = (
-        ("<Project><TargetFramework>net8.0</TargetFramework></Project>", "netstandard2.0"),
-        ("<Project><TargetFramework>net8.0</TargetFramework></Project>", "net6.0"),
-        ("<Project />", "netstandard2.0"),
-        (
-            "<Project><TargetFramework>net6.0</TargetFramework>"
-            "<TargetFramework>net8.0</TargetFramework></Project>",
-            "net6.0",
-        ),
-    )
-    for project_xml, expected in fixtures:
+        imported = fixture_root / "imported.csproj"
+        imported.write_text(
+            """<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+  <Import Project="override.props" />
+</Project>
+""",
+            encoding="utf-8",
+        )
+        (fixture_root / "override.props").write_text(
+            """<Project>
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+</Project>
+""",
+            encoding="utf-8",
+        )
         try:
-            require_target_xml(project_xml, expected, "negative fixture")
-        except (AssertionError, ET.ParseError):
-            continue
-        raise AssertionError(f"framework drift fixture was accepted: {expected}")
+            require_target(imported, "netstandard2.0", "imported override fixture")
+        except AssertionError:
+            pass
+        else:
+            raise AssertionError("imported target override fixture was accepted")
 
 
 def main() -> int:
     require_target(LIBRARY_PROJECT, "netstandard2.0")
     require_target(TEST_PROJECT, "net6.0")
-    require_negative_fixtures()
+    require_evaluation_regressions()
     print("framework compatibility contract passed")
     return 0
 
@@ -71,6 +132,6 @@ def main() -> int:
 if __name__ == "__main__":
     try:
         raise SystemExit(main())
-    except (AssertionError, ET.ParseError) as error:
+    except AssertionError as error:
         print(f"framework compatibility contract failed: {error}", file=sys.stderr)
         raise SystemExit(1)
