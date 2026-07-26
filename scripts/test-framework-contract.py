@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -14,7 +15,11 @@ LIBRARY_PROJECT = ROOT / "src/F23.StringSimilarity/F23.StringSimilarity.csproj"
 TEST_PROJECT = ROOT / "test/F23.StringSimilarity.Tests/F23.StringSimilarity.Tests.csproj"
 
 
-def evaluated_target(path: Path) -> str:
+def evaluated_target(path: Path, configuration: str | None = None) -> str:
+    selected_configuration = configuration or os.environ.get(
+        "CONFIGURATION",
+        "Release",
+    )
     with tempfile.TemporaryDirectory(prefix="string-similarity-framework-") as temp:
         targets = Path(temp) / "report-framework.targets"
         targets.write_text(
@@ -34,7 +39,7 @@ def evaluated_target(path: Path) -> str:
                 "-nologo",
                 "-target:ReportFrameworkContract",
                 f"-property:CustomAfterMicrosoftCommonTargets={targets}",
-                "-property:Configuration=Release",
+                f"-property:Configuration={selected_configuration}",
                 "-verbosity:minimal",
             ],
             cwd=path.parent,
@@ -58,8 +63,13 @@ def evaluated_target(path: Path) -> str:
     return values[0]
 
 
-def require_target(path: Path, expected: str, label: str | None = None) -> None:
-    actual = evaluated_target(path)
+def require_target(
+    path: Path,
+    expected: str,
+    label: str | None = None,
+    configuration: str | None = None,
+) -> None:
+    actual = evaluated_target(path, configuration)
     if actual != expected:
         name = label or str(path.relative_to(ROOT))
         raise AssertionError(f"{name} targets {actual}; expected {expected}")
@@ -84,14 +94,19 @@ def require_evaluation_regressions() -> None:
         conditional = fixture_root / "conditional.csproj"
         conditional.write_text(
             """<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
 </Project>
 """,
             encoding="utf-8",
         )
-        require_target(conditional, "net6.0", "conditional fixture")
+        require_target(
+            conditional,
+            "net6.0",
+            "non-default conditional fixture",
+            configuration="Debug",
+        )
 
         imported = fixture_root / "imported.csproj"
         imported.write_text(
