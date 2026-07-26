@@ -9,4 +9,5 @@ target="${VALIDATION_TARGET:-F23.StringSimilarity.sln}"
 
 cd "${repo_root}"
 
+python3 scripts/test-framework-contract.py
 dotnet test "${target}" --configuration "${configuration}" "$@"
