@@ -75,6 +75,18 @@ def require_target(
         raise AssertionError(f"{name} targets {actual}; expected {expected}")
 
 
+def require_repository_target(
+    path: Path,
+    expected: str,
+    label: str | None = None,
+    configuration: str | None = None,
+) -> None:
+    selected = configuration or os.environ.get("CONFIGURATION", "Release")
+    require_target(path, expected, label, configuration="Release")
+    if selected != "Release":
+        require_target(path, expected, label, configuration=selected)
+
+
 def require_evaluation_regressions() -> None:
     with tempfile.TemporaryDirectory(prefix="string-similarity-fixtures-") as temp:
         fixture_root = Path(temp)
@@ -108,6 +120,31 @@ def require_evaluation_regressions() -> None:
             configuration="Debug",
         )
 
+        release_drift = fixture_root / "release-drift.csproj"
+        release_drift.write_text(
+            """<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+</Project>
+""",
+            encoding="utf-8",
+        )
+        try:
+            require_repository_target(
+                release_drift,
+                "net6.0",
+                "release drift fixture",
+                configuration="Debug",
+            )
+        except AssertionError:
+            pass
+        else:
+            raise AssertionError("non-default configuration hid Release drift")
+
         imported = fixture_root / "imported.csproj"
         imported.write_text(
             """<Project Sdk="Microsoft.NET.Sdk">
@@ -137,8 +174,8 @@ def require_evaluation_regressions() -> None:
 
 
 def main() -> int:
-    require_target(LIBRARY_PROJECT, "netstandard2.0")
-    require_target(TEST_PROJECT, "net6.0")
+    require_repository_target(LIBRARY_PROJECT, "netstandard2.0")
+    require_repository_target(TEST_PROJECT, "net6.0")
     require_evaluation_regressions()
     print("framework compatibility contract passed")
     return 0
