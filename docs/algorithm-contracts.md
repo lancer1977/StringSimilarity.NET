@@ -47,5 +47,9 @@ targets `net6.0` and validates that consumer-facing surface with:
 ./scripts/validate.sh
 ```
 
+Validation first runs `scripts/test-framework-contract.py`, which rejects any
+unreviewed drift from the documented library and test targets, then executes the
+full algorithm test suite.
+
 Changing either target framework is a separate compatibility and release-policy
 decision. It must not be inferred from this documentation or invariant suite.

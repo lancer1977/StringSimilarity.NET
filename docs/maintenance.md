@@ -4,6 +4,9 @@
 
 Use `./scripts/validate.sh` locally and in CI.
 
+Validation fails before tests when the library no longer targets
+`netstandard2.0` or the test project no longer targets `net6.0`.
+
 The default target is:
 
 ```bash
